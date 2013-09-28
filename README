@@ -24,3 +24,4 @@ OR
 
 BUGS:
     - does not work yet
+    - setting breakpoints has to be rewritten for pdb (that's still rdebug code)
