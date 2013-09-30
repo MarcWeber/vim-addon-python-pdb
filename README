@@ -23,5 +23,5 @@ OR
 
 
 BUGS:
-    - does not work yet
-    - setting breakpoints has to be rewritten for pdb (that's still rdebug code)
+    - setting breakpoints is supported, but updating them clears all of them.
+      (TODO: figure out whether its worthing keeping track of break point numbers)

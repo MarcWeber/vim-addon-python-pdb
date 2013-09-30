@@ -128,10 +128,14 @@ fun! python_pdb#BreakPointsBuffer()
     let s:c.var_break_buf_nr = bufnr('%')
     noremap <buffer> <cr> :call python_pdb#UpdateBreakPoints()<cr>
     call append(0,['# put the breakpoints here, prefix with # to deactivate:', s:auto_break_end
-          \ , 'python_pdb supports different types of breakpoints:'
-          \ , '[file:|class:]<line|method>'
-          \ , '[class.]<line|method>'
-          \ , 'you always have to add the file / class in Vim'
+          \ , 'python_pdb supports:'
+          \ , 'file:line[, condition]'
+          \ , ''
+          \ , 'python also supports temporary breakpoints (tbreak).'
+          \ , 'Use the debugger window to add them (-> vim-addon-async documentation)'
+          \ , ''
+          \ , 'for now all breakpoints (also the ones you added manually) get cleared and recreated.'
+          \ , ''
           \ , 'hit <cr> to send updated breakpoints to processes'
           \ ])
     setlocal noswapfile
@@ -153,8 +157,7 @@ fun! python_pdb#UpdateBreakPoints()
   let dict_new = {}
   call python_pdb#BreakPointsBuffer()
 
-  let r_line        = '^\([^:]\+\):\(.*\)$'
-  let r_class_method     = '^\([^:]\+\)\.\([^:]\+\)$'
+  let r_line        = '^\([^:]\+\):\(\d\+\)\%(\s*,\s*\(\S.*\)\)\?$'
 
   for l in getline('0',line('$'))
     if l =~ s:auto_break_end | break | endif
@@ -168,29 +171,13 @@ fun! python_pdb#UpdateBreakPoints()
       if (filereadable(m[1]))
         let point['file'] = m[1]
       else
-        let point['class'] = m[1]
+        throw "file ".point['file'].' not readable!'
       endif
-      " ruby does not allow numbers to be methods
-      if m[2] =~ '^\d\+$'
-        let point['line'] = m[2]
-      else
-        let point['method'] = m[2]
-      endif
-    endif
+      let point['line'] = m[2]
+      let point['condition'] = m[3]
 
-    let m = matchlist(l, r_class_method)
-    if !empty(m)
-      let point = {}
-      let point['class'] = m[1]
-      " ruby does not allow numbers to be methods
-      if m[2] =~ '^\d\+$'
-        let point['line'] = m[2]
-      else
-        let point['method'] = m[2]
-      endif
+      call add(points, point)
     endif
-
-    call add(points, point)
   endfor
 
   " calculate markers:
@@ -204,26 +191,14 @@ fun! python_pdb#UpdateBreakPoints()
   call vim_addon_signs#Push("python_pdb_breakpoint", signs )
 
   for ctx in values(s:c.ctxs)
-    let c_ps = ctx.vim_managed_breakpoints
-
     if !has_key(ctx,'status')
-      " for active processes update breakpoints
 
-      " remove dropped breakpoints
-      for i in range(len(c_ps)-1,0,-1)
-        if !index(points, c_ps[i].point)
-          call ctx.write('delete '. c_ps[i].nr ."\n")
-          call remove(c_ps, i)
-        endif
-      endfor
+      " drop all breakpoints:
+      call ctx.write("clear\ny\n")
 
-      " add new breakpoints
+      " add all breakpoints
       for b in points
-        if 0 == len(filter(copy(c_ps),'v:val.point == b'))
-          call add(c_ps, {'point': b, 'nr': ctx.next_breakpoint_nr})
-          let ctx.next_breakpoint_nr += 1
-          call ctx.write('break '. p.file .':'. p.line ."\n")
-        endif
+        call ctx.write('break '. p.file .':'. p.line . (p.condition == '' ? '' : ', '. p['condition']). "\n")
       endfor
     endif
   endfor
