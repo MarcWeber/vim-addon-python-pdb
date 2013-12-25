@@ -3,7 +3,7 @@ if !exists('g:python_pdb') | let g:python_pdb = {} | endif | let s:c = g:python_
 let s:c.ctxs = get(s:c, 'ctxs', {})
 let s:c.next_ctx_nr = get(s:c, 'ctx_nr', 1)
 
-" You can also run /bin/sh and use require 'debug' in your ruby scripts
+" You can also run /bin/sh and use  import pdb; pdb.set_trace()
 
 fun! python_pdb#Setup(...)
   if a:0 > 0
@@ -11,7 +11,7 @@ fun! python_pdb#Setup(...)
     let cmd = join(a:000," ")
   else
     let cmd = "python"
-    let cmd = input('ruby command:', cmd." ".expand('%'))
+    let cmd = input('python command:', cmd." ".expand('%'))
   endif
   let ctx = python_pdb#RubyBuffer({'buf_name' : 'RUBY_DEBUG_PROCESS', 'cmd': 'socat "EXEC:"'.shellescape(cmd).'",pty,stderr" -', 'move_last' : 1})
   let ctx.ctx_nr = s:c.next_ctx_nr

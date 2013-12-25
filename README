@@ -10,7 +10,7 @@ github.com/MarcWeber/vim-addon-rdebug [1]
 installation:
 =============
 
-  get github.com/MarcWeber/vim-addon-manager, and add 'vim-addon-rdebug' to the
+  get github.com/MarcWeber/vim-addon-manager, and add 'vim-addon-pdb' to the
   list of plugins to be activated on startup. Read its documention.
   It also talks about alternative and references Vim's help file about what the
   old way of installing plugins was.
@@ -25,3 +25,20 @@ OR
 BUGS:
     - setting breakpoints is supported, but updating them clears all of them.
       (TODO: figure out whether its worthing keeping track of break point numbers)
+
+
+Usage:
+
+
+/tmp/fooo.py:
+  import pdb; pdb.set_trace()
+  print "a"
+  print "a"
+  print "a"
+  print "a"
+
+Async
+
+  AsyncPythonPdb /tmp/fooo.py
+
+Then hit F6
